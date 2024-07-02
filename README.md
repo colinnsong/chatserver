@@ -6,16 +6,16 @@
 ## 使用
 
 ### 依赖环境
-* 'cmake'
-* 'g++'
-* 'muduo'
-* 'redis'
-* 'nginx'
+* `cmake`
+* `g++`
+* `muduo`
+* `redis`
+* `nginx`
 
 ### 项目拉取和编译
-  git clone https://github.com/colinnsong/chatserver.git
-  cd chatserver
-  mkdir build
-  cd build
-  cmake ..
-  make
+git clone https://github.com/colinnsong/chatserver.git  
+cd chatserver  
+mkdir build  
+cd build  
+cmake ..  
+make  
