@@ -13,9 +13,9 @@
 * 'nginx'
 
 ### 项目拉取和编译
-git clone https://github.com/colinnsong/chatserver.git
-cd chatserver
-mkdir build
-cd build
-cmake ..
-make
+  git clone https://github.com/colinnsong/chatserver.git
+  cd chatserver
+  mkdir build
+  cd build
+  cmake ..
+  make
