@@ -6,11 +6,12 @@
 ## 使用
 
 ### 依赖环境
-* `cmake`
-* `g++`
+* `cmake(version >= 2.6)`
+* `g++(version >= 4.1)`
 * `muduo`
-* `redis`
-* `nginx`
+* `redis(version >= 4.0)`
+* `hiredis`
+* `nginx(version >= 1.9)`
 
 ### 项目拉取和编译
 ```
