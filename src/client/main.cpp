@@ -207,12 +207,12 @@ void doLoginResponse(json &responsejs)
         g_currentUser.setId(responsejs["id"].get<int>());
         g_currentUser.setName(responsejs["name"]);
 
+        // 初始化
+        g_currentUserFriendList.clear();
+
         // 记录当前用户的好友列表信息
         if (responsejs.contains("friends"))
         {
-            // 初始化
-            g_currentUserFriendList.clear();
-
             vector<string> vec = responsejs["friends"];
             for (string &str : vec)
             {
@@ -225,12 +225,12 @@ void doLoginResponse(json &responsejs)
             }
         }
 
+        // 初始化
+        g_currentUserGroupList.clear();
+        
         // 记录当前用户的群组列表信息
         if (responsejs.contains("groups"))
         {
-            // 初始化
-            g_currentUserGroupList.clear();
-
             vector<string> vec1 = responsejs["groups"];
             for (string &groupstr : vec1)
             {
