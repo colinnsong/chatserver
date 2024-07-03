@@ -71,7 +71,6 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time){
 
             // 在redis中订阅channel(id)
             _redis.subscribe(id);
-            cout << "redis订阅成功" << endl;
 
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
@@ -211,7 +210,6 @@ void ChatService::reg(const TcpConnectionPtr& conn, json& js, Timestamp time){
 */
 void ChatService::one2oneChat(const TcpConnectionPtr& conn, json& js, Timestamp time){
     int toid = js["toid"].get<int>();
-    cout << "server has recived chat message..." << endl;
     {
         lock_guard<mutex> lock(_connMutex);
         auto it = _userConnMap.find(toid);
