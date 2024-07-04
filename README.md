@@ -26,11 +26,11 @@ make
 ### 启动服务端
 ```
 cd ../bin  
-./ChatServer
+./ChatServer ip port
 ```
 
 ### 启动客户端
 ```
 cd ../bin  
-./ChatClient
+./ChatClient ip port
 ```
