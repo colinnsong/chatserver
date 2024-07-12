@@ -227,7 +227,7 @@ void doLoginResponse(json &responsejs)
 
         // 初始化
         g_currentUserGroupList.clear();
-        
+
         // 记录当前用户的群组列表信息
         if (responsejs.contains("groups"))
         {
@@ -351,6 +351,12 @@ void readTaskHandler(int clientfd)
                  << " said: " << js["msg"].get<string>() << endl;
             continue;
         }
+
+        if (REFRESH_MSG_ACK == msgtype)
+        {
+            doLoginResponse(js); // 处理登录响应的业务逻辑
+            continue;
+        }
     }
 }
 
@@ -395,18 +401,21 @@ void creategroup(int, string);
 void addgroup(int, string);
 // "groupchat" command handler
 void groupchat(int, string);
+// "refresh" command handler
+void refresh(int, string);
 // "loginout" command handler
 void loginout(int, string);
 
 // 系统支持的客户端命令列表
 unordered_map<string, string> commandMap = {
-    {"help", "显示所有支持的命令，格式help"},
-    {"chat", "一对一聊天，格式chat:friendid:message"},
-    {"addfriend", "添加好友，格式addfriend:friendid"},
-    {"creategroup", "创建群组，格式creategroup:groupname:groupdesc"},
-    {"addgroup", "加入群组，格式addgroup:groupid"},
-    {"groupchat", "群聊，格式groupchat:groupid:message"},
-    {"loginout", "注销，格式loginout"}
+    {"help", "显示所有支持的命令,格式help"},
+    {"chat", "一对一聊天,格式chat:friendid:message"},
+    {"addfriend", "添加好友,格式addfriend:friendid"},
+    {"creategroup", "创建群组,格式creategroup:groupname:groupdesc"},
+    {"addgroup", "加入群组,格式addgroup:groupid"},
+    {"groupchat", "群聊,格式groupchat:groupid:message"},
+    {"refresh", "刷新,格式refresh"},
+    {"loginout", "注销,格式loginout"}
 };
 
 // 注册系统支持的客户端命令处理
@@ -417,6 +426,7 @@ unordered_map<string, function<void(int, string)>> commandHandlerMap = {
     {"creategroup", creategroup},
     {"addgroup", addgroup},
     {"groupchat", groupchat},
+    {"refresh", refresh},
     {"loginout", loginout}
 };
 
@@ -462,6 +472,7 @@ void help(int, string)
     }
     cout << endl;
 }
+
 // "addfriend" command handler
 void addfriend(int clientfd, string str)
 {
@@ -478,6 +489,7 @@ void addfriend(int clientfd, string str)
         cerr << "send addfriend msg error -> " << buffer << endl;
     }
 }
+
 // "chat" command handler
 void chat(int clientfd, string str)
 {
@@ -506,6 +518,7 @@ void chat(int clientfd, string str)
         cerr << "send chat msg error -> " << buffer << endl;
     }
 }
+
 // "creategroup" command handler  groupname:groupdesc
 void creategroup(int clientfd, string str)
 {
@@ -532,6 +545,7 @@ void creategroup(int clientfd, string str)
         cerr << "send creategroup msg error -> " << buffer << endl;
     }
 }
+
 // "addgroup" command handler groupid
 void addgroup(int clientfd, string str)
 {
@@ -548,6 +562,7 @@ void addgroup(int clientfd, string str)
         cerr << "send addgroup msg error -> " << buffer << endl;
     }
 }
+
 // "groupchat" command handler   groupid:message
 void groupchat(int clientfd, string str)
 {
@@ -576,6 +591,21 @@ void groupchat(int clientfd, string str)
         cerr << "send groupchat msg error -> " << buffer << endl;
     }
 }
+
+// "refresh" command handler
+void refresh(int clientfd, string){
+    json js;
+    js["msgid"] = REFRESH_MSG;
+    js["id"] = g_currentUser.getId();
+    string buffer = js.dump();
+
+    int len = send(clientfd, buffer.c_str(), strlen(buffer.c_str()) + 1, 0);
+    if (-1 == len)
+    {
+        cerr << "send refresh msg error -> " << buffer << endl;
+    }
+}
+
 // "loginout" command handler
 void loginout(int clientfd, string)
 {

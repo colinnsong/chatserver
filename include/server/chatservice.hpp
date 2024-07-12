@@ -42,6 +42,8 @@ public:
     void addGroup(const TcpConnectionPtr& conn, json& js, Timestamp time);
     // 群聊业务
     void groupChat(const TcpConnectionPtr& conn, json& js, Timestamp time);
+    // 刷新业务
+    void refresh(const TcpConnectionPtr& conn, json& js, Timestamp time);
     // 从redis消息队列中获取订阅的消息
     void handleRedisSubscribeMessage(int userid, string msg);
     // 处理客户端异常退出业务

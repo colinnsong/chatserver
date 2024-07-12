@@ -16,6 +16,7 @@ ChatService::ChatService(){
     _msgHandlerMap.insert({CREATE_GROUP_MSG, bind(&ChatService::createGroup, this, _1, _2, _3)});
     _msgHandlerMap.insert({ADD_GROUP_MSG, bind(&ChatService::addGroup, this, _1, _2, _3)});
     _msgHandlerMap.insert({GROUP_CHAT_MSG, bind(&ChatService::groupChat, this, _1, _2, _3)});
+    _msgHandlerMap.insert({REFRESH_MSG, bind(&ChatService::refresh, this, _1, _2, _3)});
 
     // 连接Redis服务器并设置消息上报回调
     if(_redis.connect()){
@@ -55,7 +56,7 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time){
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
             response["errno"] = 1;
-            response["errormsg"] = "the user is online!";
+            response["errmsg"] = "the user is online!";
             conn->send(response.dump());
         }
         else{
@@ -71,6 +72,9 @@ void ChatService::login(const TcpConnectionPtr& conn, json& js, Timestamp time){
 
             // 在redis中订阅channel(id)
             _redis.subscribe(id);
+
+            // 在redis中将用户状态设置为在线
+            _redis.set(to_string(id), user.getState());
 
             json response;
             response["msgid"] = LOGIN_MSG_ACK;
@@ -162,14 +166,18 @@ void ChatService::loginout(const TcpConnectionPtr& conn, json& js, Timestamp tim
             }
         }
     }
-    // 在redis中取消订阅channel(id)
-    _redis.unsubscribe(userid);
 
     if(user.getId() != -1){
         // 更新用户状态
         user.setState("offline");
         _useropr.updateState(user);
     }
+
+    // 在redis中取消订阅channel(id)
+    _redis.unsubscribe(userid);
+
+    // 在redis中将用户状态设置为离线
+    _redis.set(to_string(userid), user.getState());
 
 }
 
@@ -221,8 +229,14 @@ void ChatService::one2oneChat(const TcpConnectionPtr& conn, json& js, Timestamp 
         }
     }
     // 查询toid用户是否在线,如果在线则在其他服务器上登录
-    User user = _useropr.query(toid);
-    if(user.getState() == "online"){
+    string state = _redis.get(to_string(toid));
+    if(state == ""){
+        // 目标用户数据不在缓存中则查询数据库并更新缓存
+        User user = _useropr.query(toid);
+        state = user.getState();
+        _redis.set(to_string(toid), state);
+    }
+    if(state == "online"){
         _redis.publish(toid, js.dump());
         return;
     }
@@ -272,18 +286,72 @@ void ChatService::groupChat(const TcpConnectionPtr& conn, json& js, Timestamp ti
             // 如果群组用户在同一台服务器上且在线
             auto toconn = it->second;
             toconn->send(js.dump());
+            return;
         }
-        else{
-            // 查询toid用户是否在线,如果在线则在其他服务器上登录
+        // 查询toid用户是否在线,如果在线则在其他服务器上登录
+        string state = _redis.get(to_string(id));
+        if(state == ""){
+            // 目标用户数据不在缓存中则查询数据库并更新缓存
             User user = _useropr.query(id);
-            if(user.getState() == "online"){
-                _redis.publish(id, js.dump());
-            }
-            else{
-                _offmsgopr.insert(id, js.dump());
-            }
+            state = user.getState();
+            _redis.set(to_string(id), state);
         }
+        if(state == "online"){
+            _redis.publish(id, js.dump());
+            return;
+        }
+        _offmsgopr.insert(id, js.dump());
     }
+}
+
+void ChatService::refresh(const TcpConnectionPtr& conn, json& js, Timestamp time){
+    int id = js["id"].get<int>();
+    User user = _useropr.query(id);
+
+    json response;
+    response["msgid"] = REFRESH_MSG_ACK;
+    response["errno"] = 0;
+    response["id"] = id;
+    response["name"] = user.getName();
+
+    // 查询用户的好友信息
+    vector<User> friends = _friendopr.query(id);
+    if(!friends.empty()){
+        vector<string> friendmsg;
+        for(User& user : friends){
+            json js;
+            js["id"] = user.getId();
+            js["name"] = user.getName();
+            js["state"] = user.getState();
+            friendmsg.push_back(js.dump());
+        }
+        response["friends"] = friendmsg;
+    }
+    // 查询用户的群组信息
+    vector<Group> groups = _groupopr.queryGroups(id);
+    if(!groups.empty()){
+        vector<string> groupmsg;
+        for(Group& group : groups){
+            json js;
+            js["id"] = group.getId();
+            js["groupname"] = group.getName();
+            js["groupdesc"] = group.getDesc();
+            vector<string> usermsg;
+            vector<GroupUser> groupusers = group.getUsers();
+            for(GroupUser& user : groupusers){
+                json userjs;
+                userjs["id"] = user.getId();
+                userjs["name"] = user.getName();
+                userjs["state"] = user.getState();
+                userjs["role"] = user.getRole();
+                usermsg.push_back(userjs.dump());
+            }
+            js["users"] = usermsg;
+            groupmsg.push_back(js.dump());
+        }
+        response["groups"] = groupmsg;
+    }
+    conn->send(response.dump());
 }
 
 // 从redis消息队列中获取订阅的消息

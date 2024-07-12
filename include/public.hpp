@@ -1,6 +1,9 @@
 #ifndef PUBLIC_H
 #define PUBLIC_H
 
+#define LOG(str) cout << __FILE__ << ":" << __LINE__ << " " << \
+        __TIMESTAMP__ << ":" << str << endl;
+
 enum MsgType{
     LOGIN_MSG = 1, // 登录消息
     LOGIN_MSG_ACK, // 登录响应消息
@@ -12,6 +15,8 @@ enum MsgType{
     CREATE_GROUP_MSG, // 创建群组消息
     ADD_GROUP_MSG, // 加入群组消息
     GROUP_CHAT_MSG, // 群聊天消息
+    REFRESH_MSG, // 刷新消息
+    REFRESH_MSG_ACK // 刷新响应消息
 };
 
 #endif
