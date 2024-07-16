@@ -286,7 +286,7 @@ void ChatService::groupChat(const TcpConnectionPtr& conn, json& js, Timestamp ti
             // 如果群组用户在同一台服务器上且在线
             auto toconn = it->second;
             toconn->send(js.dump());
-            return;
+            continue;
         }
         // 查询toid用户是否在线,如果在线则在其他服务器上登录
         string state = _redis.get(to_string(id));
@@ -298,7 +298,7 @@ void ChatService::groupChat(const TcpConnectionPtr& conn, json& js, Timestamp ti
         }
         if(state == "online"){
             _redis.publish(id, js.dump());
-            return;
+            continue;
         }
         _offmsgopr.insert(id, js.dump());
     }
