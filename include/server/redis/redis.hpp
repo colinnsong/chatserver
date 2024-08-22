@@ -34,8 +34,10 @@ private:
     redisContext *_publish_context;
     // hiredis同步上下文对象，负责subscribe消息
     redisContext *_subcribe_context;
-    // hiredis同步上下文对象，负责缓存数据的读写
-    redisContext *_readwrite_context;
+    // hiredis同步上下文对象，负责缓存数据的读
+    redisContext *_read_context;
+    // hiredis同步上下文对象，负责缓存数据的写
+    redisContext *_write_context;
     // 回调操作，收到订阅的消息，给service层上报
     function<void(int, string)> _notify_message_handler;
 };

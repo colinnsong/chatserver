@@ -27,7 +27,7 @@ private:
     void closeConnectionPool();
 
     // 数据库配置信息
-    string _ip = "127.0.0.1";
+    string _ip = "192.168.213.128";
     string _user = "colin";
     string _password = "123456";
     string _dbname = "chat";

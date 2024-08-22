@@ -20,7 +20,7 @@ Redis::~Redis()
 bool Redis::connect()
 {
     // 负责publish发布消息的上下文连接
-    _publish_context = redisConnect("127.0.0.1", 6379);
+    _publish_context = redisConnect("192.168.213.128", 6379);
     if (nullptr == _publish_context)
     {
         cerr << "connect redis failed!" << endl;
@@ -28,16 +28,24 @@ bool Redis::connect()
     }
 
     // 负责subscribe订阅消息的上下文连接
-    _subcribe_context = redisConnect("127.0.0.1", 6379);
+    _subcribe_context = redisConnect("192.168.213.128", 6379);
     if (nullptr == _subcribe_context)
     {
         cerr << "connect redis failed!" << endl;
         return false;
     }
 
-    // 负责set和get缓存数据的上下文连接
-    _readwrite_context = redisConnect("127.0.0.1", 6379);
-    if (nullptr == _readwrite_context)
+    // 负责get缓存数据的上下文连接
+    _read_context = redisConnect("127.0.0.1", 6379);
+    if (nullptr == _read_context)
+    {
+        cerr << "connect redis failed!" << endl;
+        return false;
+    }
+
+    // 负责set缓存数据的上下文连接
+    _write_context = redisConnect("192.168.213.128", 6379);
+    if (nullptr == _write_context)
     {
         cerr << "connect redis failed!" << endl;
         return false;
@@ -114,18 +122,10 @@ bool Redis::unsubscribe(int channel)
     return true;
 }
 
-// 向redis指定的key写入数据
-bool Redis::set(string key, string value)
-{
-    redisReply *reply = (redisReply *)redisCommand(_readwrite_context, "SET %s %s", key.c_str(), value.c_str());
-    freeReplyObject(reply);
-    return true;
-}
-
 // 向redis指定的key读取数据
 string Redis::get(string key)
 {
-    redisReply *reply = (redisReply *)redisCommand(_readwrite_context, "GET %s", key.c_str());
+    redisReply *reply = (redisReply *)redisCommand(_read_context, "GET %s", key.c_str());
     if (reply != NULL && reply->str != NULL)
     {
         string value = reply->str;
@@ -135,6 +135,14 @@ string Redis::get(string key)
     cerr << "get command failed!" << endl;
     freeReplyObject(reply);
     return "";
+}
+
+// 向redis指定的key写入数据
+bool Redis::set(string key, string value)
+{
+    redisReply *reply = (redisReply *)redisCommand(_write_context, "SET %s %s", key.c_str(), value.c_str());
+    freeReplyObject(reply);
+    return true;
 }
 
 // 在独立线程中接收订阅通道中的消息
